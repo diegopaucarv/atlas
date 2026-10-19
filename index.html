@@ -1,0 +1,1663 @@
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <title>ATLAS · Explorador escalable</title>
+        <style>
+            :root {
+                --bg: #f8fafe;
+                --sf: #f2f3f7;
+                --rs: #e9ebef;
+                --hl: #dcdee1;
+                --bd: #c9cace;
+                --mt: #707274;
+                --st: #4c4d50;
+                --tx: #252629;
+                --ink: #0e0f12;
+                box-sizing: border-box;
+                padding-top: env(safe-area-inset-top, 0px);
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+            }
+            @media (prefers-color-scheme: dark) {
+                :root:not([data-theme="light"]) {
+                    --bg: #0d0e11;
+                    --sf: #151618;
+                    --rs: #1d1e20;
+                    --hl: #27292b;
+                    --bd: #36383b;
+                    --mt: #848689;
+                    --st: #a9abae;
+                    --tx: #dcdee1;
+                    --ink: #f3f5f9;
+                }
+            }
+            :root[data-theme="dark"] {
+                --bg: #0d0e11;
+                --sf: #151618;
+                --rs: #1d1e20;
+                --hl: #27292b;
+                --bd: #36383b;
+                --mt: #848689;
+                --st: #a9abae;
+                --tx: #dcdee1;
+                --ink: #f3f5f9;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                margin: 0;
+            }
+            body {
+                background: var(--bg);
+                color: var(--tx);
+                font:
+                    14px/1.4 system-ui,
+                    -apple-system,
+                    "Segoe UI",
+                    sans-serif;
+                padding: 14px;
+                max-width: 1280px;
+                margin: 0 auto;
+            }
+            h1 {
+                margin: 0;
+                font-size: 22px;
+                letter-spacing: -0.02em;
+                color: var(--ink);
+            }
+            h1 span {
+                font-weight: 400;
+                color: var(--mt);
+                font-size: 13px;
+                margin-left: 8px;
+            }
+            .row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px 14px;
+                align-items: center;
+                margin: 10px 0;
+            }
+            .grp {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                flex-wrap: wrap;
+            }
+            .grp > label {
+                font-size: 11px;
+                color: var(--mt);
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+            }
+            .chips {
+                display: flex;
+                background: var(--rs);
+                border-radius: 999px;
+                padding: 3px;
+                gap: 2px;
+                flex-wrap: wrap;
+            }
+            .chips button,
+            .crumbs button {
+                font: inherit;
+                font-size: 12px;
+                border: 0;
+                background: none;
+                color: var(--st);
+                padding: 5px 11px;
+                border-radius: 999px;
+                cursor: pointer;
+            }
+            .chips button.on {
+                background: var(--ink);
+                color: var(--bg);
+                font-weight: 600;
+            }
+            .stats {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .stats span {
+                background: var(--sf);
+                border: 1px solid var(--hl);
+                border-radius: 8px;
+                padding: 3px 9px;
+                font-size: 11.5px;
+                color: var(--st);
+                font-variant-numeric: tabular-nums;
+            }
+            .grid {
+                display: grid;
+                gap: 14px;
+                grid-template-columns: minmax(0, 1fr);
+            }
+            @media (min-width: 980px) {
+                .grid {
+                    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                }
+            }
+            .card {
+                background: var(--sf);
+                border: 1px solid var(--hl);
+                border-radius: 18px;
+                padding: 10px;
+                overflow: hidden;
+            }
+            canvas {
+                display: block;
+                width: 100%;
+                border-radius: 12px;
+            }
+            #cvS {
+                touch-action: none;
+                cursor: pointer;
+                margin: 0 auto;
+            }
+            #cvT {
+                touch-action: pan-y;
+                cursor: crosshair;
+            }
+            .scrub {
+                display: none;
+                width: 100%;
+                margin: 10px 0 2px;
+                accent-color: var(--ink);
+                height: 18px;
+            }
+            .crumbs {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 2px;
+                align-items: center;
+                font-size: 12px;
+                color: var(--mt);
+                margin: 2px 0 6px;
+            }
+            .crumbs button {
+                padding: 3px 8px;
+                background: var(--rs);
+            }
+            .crumbs button:last-child {
+                background: var(--ink);
+                color: var(--bg);
+                font-weight: 600;
+            }
+            .leg {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px 6px;
+                margin: 4px 0 8px;
+            }
+            .leg button {
+                font: inherit;
+                font-size: 11.5px;
+                display: flex;
+                gap: 6px;
+                align-items: center;
+                border: 1px solid var(--hl);
+                background: var(--bg);
+                color: var(--tx);
+                padding: 3px 8px;
+                border-radius: 999px;
+                cursor: pointer;
+            }
+            .leg i {
+                width: 9px;
+                height: 9px;
+                border-radius: 50%;
+                display: block;
+            }
+            .leg b {
+                font-weight: 500;
+                color: var(--mt);
+                font-variant-numeric: tabular-nums;
+            }
+            .note {
+                font-size: 11.5px;
+                color: var(--mt);
+                margin: 8px 2px 0;
+            }
+            #tip {
+                position: fixed;
+                pointer-events: none;
+                background: var(--ink);
+                color: var(--bg);
+                padding: 6px 10px;
+                border-radius: 8px;
+                font-size: 12px;
+                z-index: 9;
+                display: none;
+                max-width: 230px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>ATLAS<span>explorador epistemológico escalable</span></h1>
+        <div class="row">
+            <div class="grp">
+                <label>Escala</label>
+                <div class="chips" id="cN"></div>
+            </div>
+            <div class="grp">
+                <label>Lente</label>
+                <div class="chips" id="cT"></div>
+            </div>
+            <div class="grp">
+                <label>Alcance</label>
+                <div class="chips" id="cS"></div>
+            </div>
+            <div class="grp">
+                <label>Era</label>
+                <div class="chips" id="cE"></div>
+            </div>
+        </div>
+        <div class="stats" id="stats"></div>
+        <div class="grid" style="margin-top: 12px">
+            <div class="card">
+                <canvas
+                    id="cvS"
+                    aria-label="Mapa radial de la taxonomía"
+                ></canvas>
+            </div>
+            <div class="card">
+                <div class="crumbs" id="crumbs"></div>
+                <div class="leg" id="leg"></div>
+                <canvas
+                    id="cvT"
+                    aria-label="Línea de tiempo con estudios"
+                ></canvas>
+                <input
+                    type="range"
+                    id="scrub"
+                    class="scrub"
+                    aria-label="Desplazar ventana temporal"
+                />
+                <div class="note" id="fn"></div>
+            </div>
+        </div>
+        <p class="note">
+            Clic en un sector: el mapa se acerca y la línea de tiempo muestra
+            sus subdivisiones con cada estudio como punto. Clic en el centro
+            para subir. En la línea de tiempo, clic en una banda para entrar;
+            arrastra (ratón) para filtrar años y ver cómo se reilumina el mapa.
+            Puntos orbitales: estudios de cada hoja, ordenados por año en
+            sentido horario; aparecen más al acercar. Opacidad = antigüedad;
+            forma (≤ 2 500 puntos, línea de tiempo) = tipo: círculo empírico,
+            cuadrado teórico, triángulo metodológico. Datos sintéticos generados
+            en tu navegador.
+        </p>
+        <div id="tip"></div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+        <script>
+            const Y0 = 1980,
+                Y1 = 2026,
+                NY = 47,
+                TAU = Math.PI * 2,
+                MAXD = 40000,
+                ORB = 34,
+                STEP = 5,
+                POOL = 1600,
+                dotA = (y) =>
+                    Math.min(1, 0.65 + 0.35 * Math.exp(-(Y1 - Y0 - y) / 30));
+            const HUES = [30, 66, 102, 138, 174, 210, 246, 282, 318, 354];
+            const TOP = [
+                "Teoría social",
+                "Metodología",
+                "Riesgo y desastres",
+                "Salud y cuerpo",
+                "Educación",
+                "Economía y trabajo",
+                "Territorio y ambiente",
+                "Cultura y medios",
+                "Poder y política",
+                "Género y familia",
+            ];
+            const A = [
+                "Teorías",
+                "Estudios",
+                "Enfoques",
+                "Modelos",
+                "Prácticas",
+                "Políticas",
+                "Redes",
+                "Discursos",
+                "Trayectorias",
+                "Desigualdades",
+                "Instituciones",
+                "Saberes",
+                "Riesgos",
+                "Identidades",
+            ];
+            const B = [
+                "comunitarias",
+                "urbanas",
+                "rurales",
+                "digitales",
+                "históricas",
+                "comparadas",
+                "participativas",
+                "críticas",
+                "territoriales",
+                "interculturales",
+                "emergentes",
+                "cotidianas",
+                "globales",
+                "andinas",
+            ];
+            const TN = ["Empírico", "Teórico", "Metodológico"];
+            const rng = (a) => () => {
+                a |= 0;
+                a = (a + 0x6d2b79f5) | 0;
+                let t = Math.imul(a ^ (a >>> 15), 1 | a);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+            const $ = (s) => document.querySelector(s),
+                fmt = (n) => Math.round(n).toLocaleString("es");
+            const LV = [];
+            function mk(name, d, hue, not, R) {
+                const n = { name, depth: d, hue, not };
+                if (d >= 5 || (d >= 3 && R() < 0.28)) {
+                    n.leaf = 1;
+                    n.li = LV.length;
+                    n.w = Math.exp(R() * 2.4 + R() * 1.2);
+                    n.on = 1980 + ((R() * 32) | 0);
+                    n.g = 1 + R() * 2.4;
+                    const pe = 0.4 + R() * 0.4;
+                    n.m0 = pe;
+                    n.m1 = pe + (1 - pe) * R();
+                    n.loc = 0.08 + R() * 0.45;
+                    LV.push(n);
+                    return n;
+                }
+                const K =
+                    d == 0
+                        ? 10
+                        : d == 1
+                          ? 3 + ((R() * 3) | 0)
+                          : d == 2
+                            ? 2 + ((R() * 3) | 0)
+                            : 2 + ((R() * 2) | 0);
+                n.children = [];
+                for (let k = 0; k < K; k++)
+                    n.children.push(
+                        mk(
+                            d == 0
+                                ? TOP[k]
+                                : A[(R() * 14) | 0] + " " + B[(R() * 14) | 0],
+                            d + 1,
+                            d == 0 ? HUES[k] : hue + (k - (K - 1) / 2) * 7,
+                            not + "." + (k + 1),
+                            R,
+                        ),
+                    );
+                return n;
+            }
+            const tree = mk("Sociología global", 0, 200, "H", rng(5));
+            const root = d3
+                .hierarchy(tree, (d) => d.children)
+                .sum((d) => (d.leaf ? Math.pow(d.w, 0.55) : 0));
+            d3.partition().size([TAU, root.height + 1])(root);
+            const nodes = root.descendants();
+            let N = 0,
+                leafOf,
+                yr,
+                ty,
+                sc,
+                r1,
+                r2,
+                order,
+                byLeaf,
+                lStart,
+                pools = [],
+                rawCnt,
+                dxy = new Float32Array(12000),
+                dxT = new Float32Array(MAXD * 3);
+            dnT = 0;
+            ((dn = 0),
+                (focus = root),
+                (hi = null),
+                (hiSet = null),
+                (hk = -1),
+                (tw = null),
+                (raf = 0),
+                (yrange = null),
+                (FT = -1),
+                (FS = 0),
+                (dispCnt = 0),
+                (maxD = []));
+            const stat = { gen: 0, draw: 0 };
+            const mq = matchMedia("(prefers-color-scheme: dark)");
+            let C = {},
+                dark = false;
+            function theme() {
+                const s = getComputedStyle(document.documentElement),
+                    g = (k) => s.getPropertyValue(k).trim();
+                C = {
+                    bg: g("--bg"),
+                    sf: g("--sf"),
+                    rs: g("--rs"),
+                    hl: g("--hl"),
+                    bd: g("--bd"),
+                    mt: g("--mt"),
+                    tx: g("--tx"),
+                    ink: g("--ink"),
+                };
+                const t = document.documentElement.dataset.theme;
+                dark = t ? t === "dark" : mq.matches;
+            }
+            const armL = [0, 62, 72, 80, 87, 92],
+                armD = [0, 62, 50, 40, 32, 26];
+            const arcCol = (n) =>
+                `hsl(${n.data.hue},${dark ? 32 : 38}%,${(dark ? armD : armL)[Math.min(n.depth, 5)]}%)`;
+            const dotCol = (h) =>
+                `hsl(${h},${dark ? 90 : 72}%,${dark ? 84 : 32}%)`;
+            let sprites = [];
+            function buildSprites() {
+                sprites = [];
+                const SZ = 24; // alta resolución, drawImage lo escala hacia abajo
+                for (let k = 0; k < S.length; k++) {
+                    const arr = [];
+                    for (let t = 0; t < 3; t++) {
+                        const cv = document.createElement("canvas");
+                        cv.width = cv.height = SZ;
+                        const g = cv.getContext("2d");
+                        g.fillStyle = dotCol(hs[k]);
+                        const c = SZ / 2;
+                        g.beginPath();
+                        if (t === 0) g.arc(c, c, c - 1, 0, TAU);
+                        else if (t === 1) g.rect(1, 1, SZ - 2, SZ - 2);
+                        else {
+                            g.moveTo(c, 1);
+                            g.lineTo(SZ - 1, SZ - 1);
+                            g.lineTo(1, SZ - 1);
+                            g.closePath();
+                        }
+                        g.fill();
+                        arr.push(cv);
+                    }
+                    sprites.push(arr);
+                }
+            }
+            function zoomAlpha() {
+                const [d0, d1] = Xs.domain();
+                const curSpan = d1 - d0;
+                const fullSpan = Y1 - Y0 + 1; // 47
+                const raw = 1 - curSpan / fullSpan;
+                const zfTime = Math.max(0, Math.min(1, Math.pow(raw, 0.6)));
+                const zfDepth = Math.min(1, (focus.depth || 0) / 2.5); // 0 → 1 en 2.5 niveles
+                const zfDots = Math.max(zfTime, zfDepth);
+                return {
+                    zf: zfDots,
+                    sMul: 0.5 * (1 - zfTime) + 0.15 * zfTime, // bandas: solo zoom temporal
+                    dMul: 0.5 * (1 - zfDots) + 1.0 * zfDots, // puntos: tiempo O profundidad
+                    kMul: 1.0 * (1 - zfDots) + 3.0 * zfDots,
+                };
+            }
+            const bandNode = (k) =>
+                leafMode
+                    ? { data: { hue: hs[k] }, depth: focus.depth + 1 }
+                    : focus.children[k];
+            const bc = (k, a) =>
+                arcCol(bandNode(k))
+                    .replace("hsl(", "hsla(")
+                    .replace(")", "," + a + ")");
+            /* ---------- generador de estudios (tipos compactos) ---------- */
+            function gen(n) {
+                const t0 = performance.now(),
+                    R = rng(11);
+                let ws = 0;
+                for (const l of LV) ws += l.w;
+                leafOf = new Uint16Array(n);
+                yr = new Uint8Array(n);
+                ty = new Uint8Array(n);
+                sc = new Uint8Array(n);
+                r1 = new Uint8Array(n);
+                r2 = new Uint8Array(n);
+                let i = 0;
+                for (const l of LV) {
+                    const m = Math.round((n * l.w) / ws);
+                    for (let j = 0; j < m && i < n; j++, i++) {
+                        let y =
+                            l.on +
+                            Math.floor((2027 - l.on) * Math.pow(R(), 1 / l.g));
+                        if (y > 2026) y = 2026;
+                        const q = R();
+                        leafOf[i] = l.li;
+                        yr[i] = y - Y0;
+                        ty[i] = q < l.m0 ? 0 : q < l.m1 ? 1 : 2;
+                        sc[i] = R() < l.loc ? 1 : 0;
+                        r1[i] = R() * 256;
+                        r2[i] = R() * 256;
+                    }
+                }
+                N = i;
+                const cnt = new Uint32Array(NY + 1);
+                for (let k = 0; k < N; k++) cnt[yr[k] + 1]++;
+                for (let y = 0; y < NY; y++) cnt[y + 1] += cnt[y];
+                order = new Uint32Array(N);
+                for (let k = 0; k < N; k++) order[cnt[yr[k]]++] = k;
+                lStart = new Uint32Array(LV.length + 1);
+                for (let k = 0; k < N; k++) lStart[leafOf[k] + 1]++;
+                for (let l = 0; l < LV.length; l++) lStart[l + 1] += lStart[l];
+                const ps = lStart.slice(0, LV.length);
+                byLeaf = new Uint32Array(N);
+                for (let p = 0; p < N; p++) {
+                    const i = order[p];
+                    byLeaf[ps[leafOf[i]]++] = i;
+                }
+                stat.gen = performance.now() - t0;
+            }
+            function recount() {
+                const lc = new Float64Array(LV.length),
+                    a = yrange ? yrange[0] - Y0 : 0,
+                    b = yrange ? yrange[1] - Y0 : NY - 1;
+                for (let i = 0; i < N; i++) {
+                    if (FT >= 0 && ty[i] !== FT) continue;
+                    if (FS && !sc[i]) continue;
+                    const y = yr[i];
+                    if (y < a || y > b) continue;
+                    lc[leafOf[i]]++;
+                }
+                root.eachAfter((n) => {
+                    n.cnt = n.children
+                        ? d3.sum(n.children, (c) => c.cnt)
+                        : lc[n.data.li];
+                });
+                pools = LV.map((l) => {
+                    const st = Math.max(1, Math.ceil(lc[l.li] / POOL)),
+                        o = [];
+                    let j = 0;
+                    for (let p = lStart[l.li]; p < lStart[l.li + 1]; p++) {
+                        const i = byLeaf[p];
+                        if (FT >= 0 && ty[i] !== FT) continue;
+                        if (FS && !sc[i]) continue;
+                        const y = yr[i];
+                        if (y < a || y > b) continue;
+                        if (j++ % st === 0) o.push(i);
+                    }
+                    return o;
+                });
+                maxD = [];
+                root.each((n) => {
+                    maxD[n.depth] = Math.max(maxD[n.depth] || 0, n.cnt);
+                });
+            }
+            /* ---------- streamgraph ---------- */
+            const cvS = $("#cvS"),
+                xS = cvS.getContext("2d"),
+                cvT = $("#cvT"),
+                xT = cvT.getContext("2d"),
+                base = document.createElement("canvas");
+            scrub = document.getElementById("scrub");
+            let xTw = 0,
+                xFrom = null,
+                xTo = null;
+            noTween = false;
+            let SW = 300,
+                TW = 300,
+                TH = 300,
+                dpr = 1,
+                unit = 40,
+                vis = [],
+                S = [],
+                LO,
+                HI,
+                hs = [],
+                nm = [],
+                sCnt,
+                sTot = 0,
+                leafMode = false,
+                dotInfo = { d: 0, t: 0 },
+                hx = null,
+                drag = null;
+            const M = { l: 8, r: 8, t: 12, b: 22 },
+                Xs = d3.scaleLinear(),
+                Ys = d3.scaleLinear();
+            const lmap = new Int16Array(LV.length);
+            function buildStream() {
+                const F = focus;
+                leafMode = !F.children;
+                const K = leafMode ? 3 : F.children.length;
+                lmap.fill(-1);
+                if (leafMode) lmap[F.data.li] = 0;
+                else
+                    F.children.forEach((c, k) =>
+                        c.leaves().forEach((l) => (lmap[l.data.li] = k)),
+                    );
+                const cnt = new Float64Array(K * NY);
+                rawCnt = cnt;
+                sTot = 0;
+                sCnt = new Float64Array(K);
+                for (let i = 0; i < N; i++) {
+                    if (lmap[leafOf[i]] < 0) continue;
+                    if (FT >= 0 && ty[i] !== FT) continue;
+                    if (FS && !sc[i]) continue;
+                    const k = leafMode ? ty[i] : lmap[leafOf[i]];
+                    cnt[k * NY + yr[i]]++;
+                    sCnt[k]++;
+                    sTot++;
+                }
+                const rows = [];
+                for (let y = 0; y < NY; y++) {
+                    const r = [];
+                    for (let k = 0; k < K; k++) {
+                        let s = 0,
+                            c = 0;
+                        for (let d = -1; d <= 1; d++) {
+                            const q = y + d;
+                            if (q >= 0 && q < NY) {
+                                s += cnt[k * NY + q];
+                                c++;
+                            }
+                        }
+                        r.push(s / c);
+                    }
+                    rows.push(r);
+                }
+                S = d3
+                    .stack()
+                    .keys(d3.range(K))
+                    .value((r, k) => r[k])
+                    .offset(d3.stackOffsetWiggle)
+                    .order(d3.stackOrderInsideOut)(rows);
+                LO = new Float64Array(K * NY);
+                HI = new Float64Array(K * NY);
+                S.forEach((s, k) =>
+                    s.forEach((p, y) => {
+                        LO[k * NY + y] = p[0];
+                        HI[k * NY + y] = p[1];
+                    }),
+                );
+                hs = leafMode
+                    ? [0, 1, 2].map((k) => F.data.hue + (k - 1) * 22)
+                    : F.children.map((c) => c.data.hue);
+                nm = leafMode ? TN : F.children.map((c) => c.data.name);
+                legend();
+                buildSprites();
+                layout();
+            }
+            const xDom = () =>
+                yrange
+                    ? [yrange[0] - 0.5, yrange[1] + 0.5]
+                    : [Y0 - 0.5, Y1 + 0.5];
+            const pad = (s) => {
+                const p = new Array(NY + 2);
+                p[0] = s[0];
+                for (let i = 0; i < NY; i++) p[i + 1] = s[i];
+                p[NY + 1] = s[NY - 1];
+                return p;
+            };
+
+            const areaPadded = (ctx) =>
+                d3
+                    .area()
+                    .x((d, i) =>
+                        Xs(
+                            i === 0
+                                ? Y0 - 0.5
+                                : i === NY + 1
+                                  ? Y1 + 0.5
+                                  : Y0 + i - 1,
+                        ),
+                    )
+                    .y0((d) => Ys(d[0]))
+                    .y1((d) => Ys(d[1]))
+                    .curve(d3.curveMonotoneX)
+                    .context(ctx);
+            function layout() {
+                const [d0, d1] = xDom();
+                const prev = Xs.domain();
+
+                Xs.domain([d0, d1]).range([M.l, TW - M.r]);
+
+                if (
+                    (Math.abs(prev[0] - d0) > 0.25 ||
+                        Math.abs(prev[1] - d1) > 0.25) &&
+                    !noTween
+                ) {
+                    xFrom = prev;
+                    xTo = [d0, d1];
+                    xTw = performance.now();
+                } else {
+                    xTw = 0;
+                }
+
+                // Y: solo las columnas visibles (para que el zoom vertical acompañe al horizontal)
+                const i0 = Math.max(0, Math.round(d0 - Y0));
+                const i1 = Math.min(NY - 1, Math.round(d1 - Y0));
+                let lo = 1e18,
+                    h = -1e18;
+                for (const s of S)
+                    for (let i = i0; i <= i1; i++) {
+                        const p = s[i];
+                        if (p[0] < lo) lo = p[0];
+                        if (p[1] > h) h = p[1];
+                    }
+                if (!(h > lo)) {
+                    lo -= 1;
+                    h += 1;
+                }
+                const pd = (h - lo) * 0.06;
+                Ys.domain([lo - pd, h + pd]).range([TH - M.b, M.t]);
+                drawBase();
+                syncScrollbar();
+                req();
+            }
+            function drawBase() {
+                base.width = TW * dpr;
+                base.height = TH * dpr;
+                const b = base.getContext("2d");
+                b.setTransform(dpr, 0, 0, dpr, 0, 0);
+                b.font = "10px system-ui";
+                b.textAlign = "center";
+                b.fillStyle = C.mt;
+                b.strokeStyle = C.hl;
+                b.lineWidth = 1;
+
+                // ── Ticks adaptativos según el dominio actual de Xs ─────────────
+                // Leemos el dominio en cada render: si layout() lo cambió por zoom
+                // (o por un tween en curso), aquí se refleja solo.
+                const [d0, d1] = Xs.domain();
+                const span = d1 - d0;
+                const step =
+                    span <= 4 ? 1 : span <= 10 ? 2 : span <= 20 ? 3 : 5;
+                const start = Math.ceil(Math.max(Y0, d0) / step) * step;
+                const end = Math.floor(Math.min(Y1, d1));
+                const nTicks = Math.max(
+                    1,
+                    Math.floor((end - start) / step) + 1,
+                );
+                const pxPerTick = (TW - M.l - M.r) / nTicks;
+                // Espacia las etiquetas si el ancho por tick es menor a ~30 px.
+                const labelEvery = Math.max(
+                    1,
+                    Math.ceil(30 / Math.max(1, pxPerTick)),
+                );
+
+                let tickIdx = 0;
+
+                for (let y = start; y <= end; y += step) {
+                    const x = Xs(y);
+                    b.beginPath();
+                    b.moveTo(x, M.t);
+                    b.lineTo(x, TH - M.b);
+                    b.stroke();
+                    if (tickIdx++ % labelEvery === 0) b.fillText(y, x, TH - 7);
+                }
+
+                // ── Bandas del streamgraph ─────────────────────────────────────
+                // (Xs/Ys ya están en el dominio del zoom; las áreas fuera del
+                //  dominio quedan automáticamente recortadas por el canvas.)
+                // ── Bandas del streamgraph (extendidas 0.5 años por lado) ─────────────
+                const ar = d3
+                    .area()
+                    .x((d, i) =>
+                        Xs(
+                            i === 0
+                                ? Y0 - 0.5
+                                : i === NY + 1
+                                  ? Y1 + 0.5
+                                  : Y0 + i - 1,
+                        ),
+                    )
+                    .y0((d) => Ys(d[0]))
+                    .y1((d) => Ys(d[1]))
+                    .curve(d3.curveMonotoneX)
+                    .context(b);
+                const { sMul, dMul, kMul } = zoomAlpha();
+                b.globalAlpha = sMul;
+
+                S.forEach((s, k) => {
+                    const ar = areaPadded(b);
+                    b.beginPath();
+                    ar(pad(s));
+                    const g = b.createLinearGradient(0, M.t, 0, TH - M.b);
+                    g.addColorStop(0, bc(k, 0.95));
+                    g.addColorStop(1, bc(k, 0.62));
+                    b.fillStyle = g;
+                    b.fill();
+                    b.strokeStyle = C.bg;
+                    b.lineWidth = 1.5;
+                    b.stroke();
+                });
+
+                b.globalAlpha = 1;
+
+                // ── Recolección de estudios visibles ───────────────────────────
+                const K = S.length;
+                const strideBoost = xTw ? 2 : 1; // 2 durante tween, 1 normal
+                const stride = Math.max(
+                    1,
+                    Math.ceil((sTot * strideBoost) / MAXD),
+                );
+                const L = [];
+                for (let k = 0; k < K; k++) L.push([]);
+
+                // Índices de año realmente visibles (holgura de ±1 para incluir
+                // las columnas que caen parcialmente en el borde).
+                const yA = Math.max(0, Math.floor(d0 - Y0));
+                const yB = Math.min(NY - 1, Math.ceil(d1 - Y0));
+
+                let c = 0;
+                for (let p = 0; p < N; p++) {
+                    const i = order[p],
+                        m = lmap[leafOf[i]];
+                    if (m < 0) continue;
+                    if (FT >= 0 && ty[i] !== FT) continue;
+                    if (FS && !sc[i]) continue;
+                    if (yr[i] < yA || yr[i] > yB) continue; // ← fuera del zoom
+                    if (c++ % stride) continue;
+                    L[leafMode ? ty[i] : m].push(i);
+                }
+
+                // ── Dibujo de puntos ───────────────────────────────────────────
+                const shapes = stride == 1 && sTot <= 2500,
+                    baseSz = shapes
+                        ? 4.0
+                        : stride == 1 && sTot < 9000
+                          ? 2.5
+                          : 1.0,
+                    sz = baseSz * kMul;
+                let ly = -1,
+                    drawn = 0;
+                b.globalCompositeOperation = dark ? "lighter" : "source-over";
+                dnT = 0;
+                for (let k = 0; k < K; k++) {
+                    b.fillStyle = dotCol(hs[k]);
+                    for (const i of L[k]) {
+                        const y = yr[i];
+                        if (y !== ly) {
+                            ly = y;
+                            b.globalAlpha = dotA(y) * dMul;
+                        }
+                        const kk = leafMode ? ty[i] : k,
+                            lo = LO[kk * NY + y],
+                            h = HI[kk * NY + y],
+                            px = Xs(Y0 + y - 0.5 + r2[i] / 255),
+                            py = Ys(lo + (h - lo) * (r1[i] / 255));
+                        drawn++;
+                        if (dnT * 3 + 2 < dxT.length) {
+                            dxT[dnT * 3] = px;
+                            dxT[dnT * 3 + 1] = py;
+                            dxT[dnT * 3 + 2] = i;
+                            dnT++;
+                        }
+                        const spr = sprites[k] && sprites[k][ty[i]];
+                        if (spr)
+                            b.drawImage(spr, px - sz / 2, py - sz / 2, sz, sz);
+                        else b.fillRect(px - sz / 2, py - sz / 2, sz, sz); // fallback
+                    }
+                }
+                b.globalAlpha = 1;
+                b.globalCompositeOperation = "source-over";
+                dotInfo = { d: drawn, t: sTot };
+                const zoomTag = yrange
+                    ? ` · zoom ${yrange[0]}–${yrange[1]}`
+                    : "";
+                $("#fn").textContent =
+                    `${fmt(drawn)} de ${fmt(sTot)} estudios dibujados${
+                        drawn < sTot
+                            ? " (muestra uniforme para mantener fluidez)"
+                            : ""
+                    } · suavizado de 3 años en las bandas${zoomTag}`;
+            }
+
+            function drawStream() {
+                const g = xT;
+                g.setTransform(dpr, 0, 0, dpr, 0, 0);
+                g.clearRect(0, 0, TW, TH);
+                const bgG = g.createLinearGradient(0, 0, 0, TH);
+                bgG.addColorStop(0, C.rs);
+                bgG.addColorStop(1, C.bg);
+                g.fillStyle = bgG;
+                g.fillRect(0, 0, TW, TH);
+                g.drawImage(base, 0, 0, TW, TH);
+
+                // ── Highlight de la banda bajo el cursor ───────────────────────
+                if (hk >= 0 && S[hk]) {
+                    const ar = d3
+                        .area()
+                        .x((d, i) =>
+                            Xs(
+                                i === 0
+                                    ? Y0 - 0.5
+                                    : i === NY + 1
+                                      ? Y1 + 0.5
+                                      : Y0 + i - 1,
+                            ),
+                        )
+                        .y0((d) => Ys(d[0]))
+                        .y1((d) => Ys(d[1]))
+                        .curve(d3.curveMonotoneX)
+                        .context(g);
+
+                    // Padding idéntico al de drawBase
+                    const s = S[hk];
+                    const padded = new Array(NY + 2);
+                    padded[0] = s[0];
+                    for (let i = 0; i < NY; i++) padded[i + 1] = s[i];
+                    padded[NY + 1] = s[NY - 1];
+
+                    g.beginPath();
+                    ar(padded);
+                    g.fillStyle = dark
+                        ? "rgba(255,255,255,.14)"
+                        : "rgba(255,255,255,.35)";
+                    g.fill();
+                    g.strokeStyle = C.ink;
+                    g.lineWidth = 1.6;
+                    g.stroke();
+                }
+
+                // ── Guía vertical del cursor ───────────────────────────────────
+                if (hx != null) {
+                    g.strokeStyle = C.mt;
+                    g.lineWidth = 1;
+                    g.setLineDash([3, 3]);
+                    g.beginPath();
+                    g.moveTo(hx, M.t);
+                    g.lineTo(hx, TH - M.b);
+                    g.stroke();
+                    g.setLineDash([]);
+                }
+
+                // ── Overlay de selección (SOLO durante drag) ───────────────────
+                // Antes había un `else if (yrange)` que pintaba el rango persistente.
+                // Al estar zoomeado, el rango ES la vista: ese velo quedaría como dos
+                // franjas de ~8px en los bordes. Lo quitamos. El arrastre dentro del
+                // zoom sigue funcionando porque Xs.invert() ya respeta el nuevo dominio.
+                if (drag && drag.moved) {
+                    const a0 = Math.min(drag.x0, drag.x);
+                    const a1 = Math.max(drag.x0, drag.x);
+                    g.globalAlpha = 0.6;
+                    g.fillStyle = C.bg;
+                    g.fillRect(0, M.t, a0, TH - M.t - M.b);
+                    g.fillRect(a1, M.t, TW - a1, TH - M.t - M.b);
+                    g.globalAlpha = 1;
+                    g.strokeStyle = C.ink;
+                    g.lineWidth = 1.5;
+                    g.strokeRect(a0, M.t, a1 - a0, TH - M.t - M.b);
+                }
+            }
+            /* ---------- mapa radial ---------- */
+            const cl = (v) => Math.max(0, Math.min(1, v));
+            function setFocus(n) {
+                focus = n;
+                const p = n,
+                    w = p.x1 - p.x0;
+                for (const d of nodes) {
+                    d.f = d.c ? { ...d.c } : null;
+                    d.t = {
+                        x0: cl((d.x0 - p.x0) / w) * TAU,
+                        x1: cl((d.x1 - p.x0) / w) * TAU,
+                        y0: Math.max(0, d.y0 - p.depth),
+                        y1: Math.max(0, d.y1 - p.depth),
+                    };
+                    if (!d.c) {
+                        d.c = { ...d.t };
+                        d.f = { ...d.t };
+                    }
+                }
+                tw = { s: performance.now() };
+                setHi(null);
+                buildStream();
+                crumbs();
+                req();
+            }
+            function setHi(n) {
+                if (n === hi) return;
+                hi = n;
+                hiSet = n ? new Set(n.descendants()) : null;
+                hk = -1;
+                if (n && !leafMode) {
+                    let q = n;
+                    while (q && q.parent !== focus) q = q.parent;
+                    if (q) hk = focus.children.indexOf(q);
+                }
+                req();
+            }
+            function drawSun() {
+                const g = xS;
+                g.setTransform(dpr, 0, 0, dpr, 0, 0);
+                const cx = SW / 2,
+                    cy = SW / 2;
+                unit = (SW / 2 - 4 - ORB) / 6;
+                const bg = g.createRadialGradient(cx, cy, 0, cx, cy, SW / 2);
+                bg.addColorStop(0, C.rs);
+                bg.addColorStop(1, C.bg);
+                g.fillStyle = bg;
+                g.fillRect(0, 0, SW, SW);
+                vis = [];
+                const arc = d3
+                    .arc()
+                    .startAngle((d) => d.x0)
+                    .endAngle((d) => d.x1)
+                    .padAngle((d) => Math.min((d.x1 - d.x0) / 2, 0.003))
+                    .padRadius(unit * 3)
+                    .innerRadius((d) => d.y0 * unit)
+                    .outerRadius((d) =>
+                        Math.max(d.y0 * unit + 0.5, d.y1 * unit - 1),
+                    )
+                    .context(g);
+                g.save();
+                g.translate(cx, cy);
+                for (const n of nodes) {
+                    const c = n.c;
+                    if (
+                        c.y1 <= 0.02 ||
+                        (c.y0 < 0.02 && c.y1 <= 1.02 && n === focus) ||
+                        c.x1 - c.x0 < 0.0008 ||
+                        (c.x1 - c.x0) * c.y1 * unit < 0.6
+                    )
+                        continue;
+                    if (n === focus && c.y0 < 0.02) continue;
+                    const dim = hiSet && !hiSet.has(n);
+                    g.globalAlpha =
+                        n.cnt > 0
+                            ? (0.55 +
+                                  0.45 *
+                                      Math.sqrt(n.cnt / (maxD[n.depth] || 1))) *
+                              (dim ? 0.4 : 1)
+                            : dim
+                              ? 0.3
+                              : 0.8;
+                    g.fillStyle = n.cnt > 0 ? arcCol(n) : C.rs;
+                    g.beginPath();
+                    arc(c);
+                    g.fill();
+                    vis.push(n);
+                    if (hiSet && !dim) {
+                        g.globalAlpha = 1;
+                        g.strokeStyle = C.ink;
+                        g.lineWidth = n === hi ? 2 : 0.8;
+                        g.stroke();
+                    }
+                }
+                g.restore();
+                g.globalAlpha = 1;
+                g.textAlign = "center";
+                g.textBaseline = "middle";
+                g.font = "10px system-ui";
+                for (const n of vis) {
+                    const c = n.c,
+                        m = (c.x0 + c.x1) / 2,
+                        r = ((c.y0 + c.y1) / 2) * unit,
+                        ch = (c.x1 - c.x0) * r,
+                        mc = Math.floor(ch / 5.4);
+                    if (mc < 4 || (c.y1 - c.y0) * unit < 14) continue;
+                    const t =
+                        n.data.name.length > mc
+                            ? n.data.name.slice(0, mc - 1) + "…"
+                            : n.data.name;
+                    g.save();
+                    g.translate(cx + r * Math.sin(m), cy - r * Math.cos(m));
+                    g.rotate(Math.cos(m) < 0 ? m + Math.PI : m);
+                    g.fillStyle =
+                        dark && n.depth > 2
+                            ? "#F3F5F9"
+                            : dark
+                              ? "#0E0F12"
+                              : C.ink;
+                    g.globalAlpha = n.cnt > 0 ? 1 : 0.5;
+                    g.fillText(t, 0, 0);
+                    g.restore();
+                }
+                const Ro = 6 * unit + 9;
+                g.globalAlpha = 1;
+                g.lineWidth = 0.6;
+                g.strokeStyle = C.hl;
+                for (let k = 0; k < 4; k++) {
+                    g.beginPath();
+                    g.arc(cx, cy, Ro + k * STEP, 0, TAU);
+                    g.stroke();
+                }
+                dn = 0;
+                for (const n of vis) {
+                    if (n.children) continue;
+                    const c = n.c,
+                        w = c.x1 - c.x0,
+                        P = pools[n.data.li];
+                    if (!P || !P.length || w < 0.0005) continue;
+                    const arcPx = w * Ro;
+                    let rr = 2.1;
+                    if (arcPx < 4.6) rr = Math.max(0.8, arcPx / 2.2);
+                    const slots = Math.max(
+                            1,
+                            Math.floor(arcPx / (rr * 2 + 0.8)),
+                        ),
+                        m = Math.min(slots * 4, P.length),
+                        su = Math.ceil(m / 4),
+                        bi = lmap[n.data.li],
+                        hue = bi >= 0 ? hs[leafMode ? 1 : bi] : n.data.hue,
+                        dim = hiSet && !hiSet.has(n);
+                    g.fillStyle = dotCol(hue);
+                    for (let j = 0; j < m; j++) {
+                        const i = P[Math.floor((j * P.length) / m)],
+                            a = c.x0 + (((j >> 2) + 0.5) / su) * w,
+                            r = Ro + (j & 3) * STEP,
+                            x = cx + r * Math.sin(a),
+                            y = cy - r * Math.cos(a);
+                        g.globalAlpha = dotA(yr[i]) * (dim ? 0.35 : 1);
+                        if (rr >= 1.3) {
+                            g.beginPath();
+                            g.arc(x, y, rr, 0, TAU);
+                            g.fill();
+                        } else g.fillRect(x - rr, y - rr, rr * 2, rr * 2);
+                        if (dn * 3 + 2 < dxy.length) {
+                            dxy[dn * 3] = x;
+                            dxy[dn * 3 + 1] = y;
+                            dxy[dn * 3 + 2] = i;
+                            dn++;
+                        }
+                    }
+                }
+                g.globalAlpha = 1;
+                g.beginPath();
+                g.arc(cx, cy, unit - 2, 0, TAU);
+                g.fillStyle = C.bg;
+                g.fill();
+                g.strokeStyle = focus === root ? C.hl : C.ink;
+                g.lineWidth = focus === root ? 1 : 2;
+                g.stroke();
+                g.fillStyle = C.ink;
+                g.font = "600 11px system-ui";
+                const w = focus.data.name.split(" "),
+                    ls = [""];
+                for (const s of w) {
+                    if (
+                        (ls[ls.length - 1] + " " + s).trim().length > 13 &&
+                        ls[ls.length - 1]
+                    )
+                        ls.push(s);
+                    else
+                        ls[ls.length - 1] = (
+                            ls[ls.length - 1] +
+                            " " +
+                            s
+                        ).trim();
+                }
+                ls.slice(0, 3).forEach((s, i, a) =>
+                    g.fillText(s, cx, cy - 14 - (a.length - 1) * 6 + i * 12),
+                );
+                g.font = "700 16px system-ui";
+                g.fillText(fmt(dispCnt), cx, cy + (ls.length > 2 ? 18 : 12));
+                g.font = "10px system-ui";
+                g.fillStyle = C.mt;
+                g.fillText(
+                    focus === root ? "estudios" : "↑ clic para subir",
+                    cx,
+                    cy + (ls.length > 2 ? 31 : 26),
+                );
+            }
+            function hit(px, py) {
+                const dx = px - SW / 2,
+                    dy = py - SW / 2,
+                    r = Math.hypot(dx, dy);
+                let a = Math.atan2(dx, -dy);
+                if (a < 0) a += TAU;
+                if (r < unit) return "c";
+                for (const n of vis) {
+                    const g = n.c;
+                    if (
+                        r >= g.y0 * unit &&
+                        r < g.y1 * unit &&
+                        a >= g.x0 &&
+                        a < g.x1
+                    )
+                        return n;
+                }
+                if (r >= 6 * unit && r < 6 * unit + ORB) {
+                    for (const n of vis)
+                        if (!n.children && a >= n.c.x0 && a < n.c.x1) return n;
+                }
+                return null;
+            }
+            /* ---------- bucle ---------- */
+            function req() {
+                if (!raf) raf = requestAnimationFrame(frame);
+            }
+            function frame(now) {
+                raf = 0;
+                let more = false;
+                if (tw) {
+                    const t = Math.min(1, (now - tw.s) / 700),
+                        e =
+                            t < 0.5
+                                ? 4 * t * t * t
+                                : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                    for (const d of nodes) {
+                        const f = d.f,
+                            g = d.t,
+                            c = d.c;
+                        c.x0 = f.x0 + (g.x0 - f.x0) * e;
+                        c.x1 = f.x1 + (g.x1 - f.x1) * e;
+                        c.y0 = f.y0 + (g.y0 - f.y0) * e;
+                        c.y1 = f.y1 + (g.y1 - f.y1) * e;
+                    }
+                    if (t >= 1) tw = null;
+                    else more = true;
+                }
+                if (xTw) {
+                    const t = Math.min(1, (performance.now() - xTw) / 500);
+                    const e =
+                        t < 0.5
+                            ? 4 * t * t * t
+                            : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                    const a = xFrom[0] + (xTo[0] - xFrom[0]) * e;
+                    const b = xFrom[1] + (xTo[1] - xFrom[1]) * e;
+                    Xs.domain([a, b]);
+
+                    if (t < 1) {
+                        drawBase();
+                        more = true;
+                    } else {
+                        xTw = null;
+                        drawBase();
+                    }
+                }
+                const dc = focus.cnt - dispCnt;
+                if (Math.abs(dc) > 0.5) {
+                    dispCnt += dc * 0.16;
+                    more = true;
+                } else dispCnt = focus.cnt;
+                const t0 = performance.now();
+                drawSun();
+                drawStream();
+                stat.draw = stat.draw * 0.7 + (performance.now() - t0) * 0.3;
+                if (more) req();
+            }
+            /* ---------- UI ---------- */
+            function crumbs() {
+                const e = $("#crumbs");
+                e.innerHTML = "";
+                focus
+                    .ancestors()
+                    .reverse()
+                    .forEach((n, i, a) => {
+                        const b = document.createElement("button");
+                        b.textContent = n.data.name;
+                        b.onclick = () => n !== focus && setFocus(n);
+                        e.append(b);
+                        if (i < a.length - 1) e.append("›");
+                    });
+            }
+            function legend() {
+                const e = $("#leg");
+                e.innerHTML = "";
+                S.forEach((s, k) => {
+                    const b = document.createElement("button");
+                    b.innerHTML = `<i style="background:${bc(k, 1)};box-shadow:0 0 0 2px ${dotCol(hs[k])}"></i>${nm[k]} <b>${fmt(sCnt[k])}</b>`;
+                    if (!leafMode) {
+                        b.onclick = () => setFocus(focus.children[k]);
+                        b.onpointerenter = () => setHi(focus.children[k]);
+                        b.onpointerleave = () => setHi(null);
+                    }
+                    e.append(b);
+                });
+            }
+            function chips(id, items, cur, fn) {
+                const el = $(id);
+                el.innerHTML = "";
+                items.forEach(([l, v]) => {
+                    const b = document.createElement("button");
+                    b.textContent = l;
+                    if (JSON.stringify(v) === JSON.stringify(cur))
+                        b.className = "on";
+                    b.onclick = () => {
+                        [...el.children].forEach(
+                            (c) => (c.className = c === b ? "on" : ""),
+                        );
+                        fn(v);
+                    };
+                    el.append(b);
+                });
+            }
+            function stats() {
+                const lv = LV.length;
+                $("#stats").innerHTML =
+                    `<span>${nodes.length} nodos · ${lv} hojas · profundidad ${root.height}</span><span>${fmt(N)} estudios generados en ${stat.gen.toFixed(0)} ms</span><span>dibujo ${stat.draw.toFixed(1)} ms/cuadro</span><span>mostrando ${fmt(focus.cnt)} tras filtros</span>`;
+            }
+            const tip = $("#tip");
+            function showTip(e, h) {
+                tip.innerHTML = h;
+                tip.style.display = "block";
+                tip.style.left =
+                    Math.min(e.clientX + 12, innerWidth - 240) + "px";
+                tip.style.top = e.clientY + 14 + "px";
+            }
+            const hideTip = () => (tip.style.display = "none");
+            function regen(n) {
+                gen(n);
+                recount();
+                dispCnt = 0;
+                buildStream();
+                stats();
+                req();
+            }
+            function syncScrollbar() {
+                if (yrange) {
+                    const w = yrange[1] - yrange[0];
+                    const maxStart = Y1 - w;
+                    if (maxStart <= Y0 + 0.5) {
+                        scrub.style.display = "none";
+                        return;
+                    }
+                    scrub.style.display = "block";
+                    scrub.min = Y0;
+                    scrub.max = maxStart;
+                    scrub.step = 0.1;
+                    const cur = parseFloat(scrub.value);
+                    if (!isFinite(cur) || Math.abs(cur - yrange[0]) > 0.05)
+                        scrub.value = yrange[0];
+                } else {
+                    scrub.style.display = "none";
+                }
+            }
+
+            let scrubRaf = 0;
+            scrub.oninput = () => {
+                if (scrubRaf) return;
+                scrubRaf = requestAnimationFrame(() => {
+                    scrubRaf = 0;
+                    if (!yrange) return;
+                    const w = yrange[1] - yrange[0];
+                    const v = Number(scrub.value);
+                    yrange = [v, v + w];
+                    recount();
+                    noTween = true; // sin animación al arrastrar
+                    layout();
+                    noTween = false;
+                    stats();
+                });
+            };
+            function clearEra() {
+                [...$("#cE").children].forEach(
+                    (c, i) => (c.className = i ? "" : "on"),
+                );
+            }
+            chips(
+                "#cN",
+                [
+                    ["10 mil", 1e4],
+                    ["100 mil", 1e5],
+                    ["500 mil", 5e5],
+                    ["1 millón", 1e6],
+                ],
+                1e5,
+                (v) => {
+                    $("#stats").innerHTML = "<span>generando…</span>";
+                    setTimeout(() => regen(v), 30);
+                },
+            );
+            chips(
+                "#cT",
+                [
+                    ["Todos", -1],
+                    ["Empírico", 0],
+                    ["Teórico", 1],
+                    ["Metodológico", 2],
+                ],
+                -1,
+                (v) => {
+                    FT = v;
+                    recount();
+                    layout();
+                    stats();
+                    req();
+                },
+            );
+            chips(
+                "#cS",
+                [
+                    ["Mundo", 0],
+                    ["Local", 1],
+                ],
+                0,
+                (v) => {
+                    FS = v;
+                    recount();
+                    buildStream();
+                    stats();
+                    req();
+                },
+            );
+            chips(
+                "#cE",
+                [
+                    ["Todas", null],
+                    ["1980–99", [1980, 1999]],
+                    ["2000–14", [2000, 2014]],
+                    ["2015–26", [2015, 2026]],
+                ],
+                null,
+                (v) => {
+                    yrange = v;
+                    recount();
+                    buildStream();
+
+                    layout();
+                    stats();
+                    req();
+                },
+            );
+            cvS.onpointermove = (e) => {
+                const r = cvS.getBoundingClientRect(),
+                    px = e.clientX - r.left,
+                    py = e.clientY - r.top,
+                    n = hit(px, py);
+                setHi(n && n !== "c" ? n : null);
+                let bd = 30,
+                    bi = -1;
+                for (let q = 0; q < dn; q++) {
+                    const d =
+                        (dxy[q * 3] - px) ** 2 + (dxy[q * 3 + 1] - py) ** 2;
+                    if (d < bd) {
+                        bd = d;
+                        bi = q;
+                    }
+                }
+                if (bi >= 0) {
+                    const i = dxy[bi * 3 + 2];
+                    showTip(
+                        e,
+                        `<b>Estudio #${fmt(i + 1)}</b><br>${LV[leafOf[i]].name}<br>${Y0 + yr[i]} · ${TN[ty[i]]} · ${sc[i] ? "Local" : "Mundo"}`,
+                    );
+                    return;
+                }
+                if (n && n !== "c")
+                    showTip(
+                        e,
+                        `<b>${n.data.name}</b><br>${n.data.not} · ${fmt(n.cnt)} estudios (${((100 * n.cnt) / Math.max(1, focus.cnt)).toFixed(1)}% de la vista)`,
+                    );
+                else if (n === "c" && focus !== root)
+                    showTip(e, "Subir un nivel");
+                else hideTip();
+            };
+            cvS.onpointerleave = () => {
+                setHi(null);
+                hideTip();
+            };
+            cvS.onclick = (e) => {
+                const r = cvS.getBoundingClientRect(),
+                    n = hit(e.clientX - r.left, e.clientY - r.top);
+                if (n === "c") {
+                    if (focus.parent) setFocus(focus.parent);
+                } else if (n && n !== focus) setFocus(n);
+            };
+            function bandAt(x, y) {
+                if (!S.length) return -1;
+                const yi = Math.max(
+                    0,
+                    Math.min(NY - 1, Math.round(Xs.invert(x) - Y0)),
+                );
+                for (let j = 0; j < S.length; j++) {
+                    const p = S[j][yi];
+                    if (y >= Ys(p[1]) && y <= Ys(p[0])) return j;
+                }
+                return -1;
+            }
+            const pos = (e) => {
+                const r = cvT.getBoundingClientRect();
+                return [e.clientX - r.left, e.clientY - r.top];
+            };
+            cvT.onpointerdown = (e) => {
+                if (e.pointerType === "touch") return;
+                const [x] = pos(e);
+                drag = { x0: x, x, moved: false };
+                cvT.setPointerCapture(e.pointerId);
+            };
+            cvT.onpointermove = (e) => {
+                const [x, y] = pos(e);
+                hx = x;
+                if (drag) {
+                    drag.x = x;
+                    if (Math.abs(x - drag.x0) > 8) drag.moved = true;
+                    req();
+                    return;
+                }
+
+                // ── Tooltip de estudio: solo después de entrar a un sector ──
+                if (focus !== root) {
+                    const hoverY = Math.round(Xs.invert(x) - Y0);
+                    let bd = 12,
+                        bi = -1; // bd = radio en px²
+                    for (let q = 0; q < dnT; q++) {
+                        const si = dxT[q * 3 + 2];
+                        if (Math.abs(yr[si] - hoverY) > 1) continue; // filtro barato por año
+                        const dxp = dxT[q * 3] - x;
+                        const dyp = dxT[q * 3 + 1] - y;
+                        const d2 = dxp * dxp + dyp * dyp;
+                        if (d2 < bd) {
+                            bd = d2;
+                            bi = q;
+                        }
+                    }
+                    if (bi >= 0) {
+                        const i = dxT[bi * 3 + 2];
+                        showTip(
+                            e,
+                            `<b>Estudio #${fmt(i + 1)}</b><br>${LV[leafOf[i]].name}<br>${Y0 + yr[i]} · ${TN[ty[i]]} · ${sc[i] ? "Local" : "Mundo"}`,
+                        );
+                        if (!leafMode) {
+                            const k = bandAt(x, y);
+                            setHi(k >= 0 ? focus.children[k] : null);
+                        }
+                        req();
+                        return;
+                    }
+                }
+
+                // ── Fallback: tooltip de banda (como hasta ahora) ──
+                const k = bandAt(x, y),
+                    yi = Math.max(
+                        0,
+                        Math.min(NY - 1, Math.round(Xs.invert(x) - Y0)),
+                    );
+                if (!leafMode) setHi(k >= 0 ? focus.children[k] : null);
+                req();
+                if (k >= 0) sh(e, k, yi);
+                else hideTip();
+            };
+            function sh(e, k, yi) {
+                const v = Math.round(sCntYear(k, yi));
+                showTip(
+                    e,
+                    `<b>${nm[k]}</b><br>${Y0 + yi}: ${fmt(v)} estudios${leafMode ? "" : "<br>clic para entrar"}`,
+                );
+            }
+            function sCntYear(k, yi) {
+                return rawCnt[k * NY + yi];
+            }
+            cvT.onpointerup = (e) => {
+                const [x, y] = pos(e);
+                if (drag && drag.moved) {
+                    const a = Math.round(Xs.invert(Math.min(drag.x0, x)));
+                    const b = Math.round(Xs.invert(Math.max(drag.x0, x)));
+                    yrange = [
+                        Math.max(Y0, Math.min(a, b)),
+                        Math.min(Y1, Math.max(a, b)),
+                    ];
+                    clearEra();
+                    recount();
+                    layout();
+                    stats();
+                } else if (!leafMode) {
+                    const k = bandAt(x, y);
+                    if (k >= 0) setFocus(focus.children[k]);
+                }
+                drag = null;
+                req();
+            };
+            cvT.ondblclick = () => {
+                yrange = null;
+                clearEra();
+                recount();
+                layout();
+                stats();
+                req();
+            };
+            cvT.onpointercancel = () => {
+                drag = null;
+            };
+            cvT.onpointerleave = () => {
+                hx = null;
+                drag = null;
+                setHi(null);
+                hideTip();
+                req();
+            };
+            function size() {
+                dpr = Math.min(2, devicePixelRatio || 1);
+                SW = Math.floor(Math.min(720, cvS.parentNode.clientWidth - 20));
+                cvS.width = SW * dpr;
+                cvS.height = SW * dpr;
+                cvS.style.width = SW + "px";
+                cvS.style.height = SW + "px";
+                TW = Math.floor(cvT.parentNode.clientWidth - 20);
+                TH = Math.round(Math.max(260, Math.min(440, TW * 0.62)));
+                cvT.width = TW * dpr;
+                cvT.height = TH * dpr;
+                cvT.style.height = TH + "px";
+                if (S.length) layout();
+                req();
+            }
+            function retheme() {
+                theme();
+
+                if (S.length) {
+                    buildSprites();
+                    drawBase();
+                }
+                req();
+            }
+            mq.addEventListener("change", retheme);
+            new MutationObserver(retheme).observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ["data-theme"],
+            });
+            new ResizeObserver(size).observe(document.body);
+            theme();
+            size();
+            gen(1e5);
+            recount();
+            setFocus(root);
+            for (const d of nodes) {
+                d.c = { ...d.t };
+            }
+            tw = null;
+            dispCnt = root.cnt;
+            stats();
+            setInterval(stats, 700);
+            req();
+        </script>
+    </body>
+</html>
